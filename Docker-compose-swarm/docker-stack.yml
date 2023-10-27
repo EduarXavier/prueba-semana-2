@@ -1,0 +1,54 @@
+version: "3.8"
+services:
+  api:
+    container_name: api_node
+    image: api-prueba-2
+    deploy:
+      mode: replicated
+      replicas: 2
+    ports:
+      - 8080:8080
+    working_dir: /app
+    networks:
+      - net
+
+  db:
+    container_name: api_db
+    deploy:
+      mode: replicated
+      replicas: 1
+    image: mariadb:10.5.8
+    ports:
+      - 3306:3306
+    volumes:
+      - ./db:/var/lib/mysql
+    networks:
+      - net
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_DATABASE: db_example
+    secrets:
+      - db_root_password
+
+  nginx:
+    container_name: api_nginx
+    image: nginx:1.24.0
+    deploy:
+      mode: replicated
+      replicas: 3
+    ports:
+      - 443:443
+    volumes:
+      - ./nginx/:/etc/nginx/conf.d/
+      - ./nginx/ssl/:/etc/nginx/ssl/
+    networks:
+      - net
+
+networks:
+  net:
+    name: net
+    driver: overlay
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
